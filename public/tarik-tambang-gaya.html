@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TARIK TAMBANG GAYA — Game Edukasi IPAS Kelas 4 SD</title>
+  <meta name="description" content="Permainan edukasi 3D tarik tambang seru dan interaktif untuk materi gaya dan pengaruhnya terhadap benda, khususnya gaya gesek.">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    body { background: linear-gradient(180deg, #7dd3fc 0%, #bae6fd 60%, #86efac 100%); min-height: 100vh; color: #1e293b; display: flex; flex-direction: column; align-items: center; justify-content: space-between; overflow-x: hidden; }
+    
+    /* Header Bar */
+    .top-bar { width: 100%; max-width: 960px; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; z-index: 10; }
+    .badge { background: #ffffff; padding: 6px 14px; border-radius: 999px; font-weight: 800; font-size: 13px; color: #1e3a8a; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 2px solid #93c5fd; }
+    .btn-icon { background: #ffffff; border: 2px solid #cbd5e1; border-radius: 12px; padding: 8px 12px; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.06); }
+    .btn-icon:hover { transform: translateY(-2px); background: #f8fafc; }
+
+    /* Main Container */
+    .container { width: 100%; max-width: 960px; padding: 12px 16px; display: flex; flex-direction: column; gap: 14px; align-items: center; }
+
+    /* 3D Arena Viewport */
+    .arena-box { width: 100%; height: 260px; background: #38bdf8; border-radius: 24px; position: relative; overflow: hidden; border: 4px solid #ffffff; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2); }
+    canvas#gameCanvas { width: 100%; height: 100%; display: block; }
+    .score-left, .score-right { position: absolute; top: 12px; background: rgba(255,255,255,0.95); padding: 6px 14px; border-radius: 999px; font-weight: 800; font-size: 13px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .score-left { left: 14px; border: 2px solid #3b82f6; color: #1d4ed8; }
+    .score-right { right: 14px; border: 2px solid #ef4444; color: #b91c1c; }
+
+    /* Question & Card */
+    .card { width: 100%; background: #ffffff; border-radius: 24px; padding: 20px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border: 2px solid #e2e8f0; }
+    .q-tag { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 800; background: #e0f2fe; color: #0369a1; margin-bottom: 8px; }
+    .q-text { font-size: 17px; font-weight: 800; color: #0f172a; line-height: 1.4; margin-bottom: 16px; }
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 640px) { .options-grid { grid-template-columns: 1fr; } }
+    
+    .btn-opt { background: #f8fafc; border: 2px solid #cbd5e1; border-radius: 16px; padding: 12px 16px; font-size: 14px; font-weight: 700; color: #334155; text-align: left; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 10px; }
+    .btn-opt:hover { background: #eff6ff; border-color: #3b82f6; transform: translateY(-1px); }
+    .btn-opt.correct { background: #dcfce7; border-color: #22c55e; color: #15803d; }
+    .btn-opt.wrong { background: #fee2e2; border-color: #ef4444; color: #b91c1c; }
+    .opt-letter { width: 28px; height: 28px; border-radius: 8px; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; shrink-0; }
+
+    /* Primary Start Button */
+    .btn-primary { background: linear-gradient(135deg, #f59e0b, #ea580c); color: #ffffff; border: 3px solid #ffffff; padding: 14px 32px; border-radius: 999px; font-size: 18px; font-weight: 900; cursor: pointer; box-shadow: 0 10px 20px rgba(234,88,12,0.3); transition: all 0.2s; }
+    .btn-primary:hover { transform: scale(1.03); }
+
+    /* Modal Backdrop */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.6); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+    .modal { background: #ffffff; border-radius: 28px; max-width: 520px; width: 100%; padding: 24px; border: 4px solid #fde047; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <div class="badge">🏫 IPAS KELAS 4 SD — TARIK TAMBANG GAYA</div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn-icon" onclick="toggleAudio()">🔊 Suara</button>
+      <button class="btn-icon" onclick="toggleFullscreen()">⛶ Layar Penuh</button>
+    </div>
+  </div>
+
+  <div class="container" id="mainContainer">
+    <!-- 3D Tug of War Canvas Field -->
+    <div class="arena-box">
+      <canvas id="gameCanvas"></canvas>
+      <div class="score-left" id="badgeLeft">🔵 Murid: <span id="scoreValLeft">0</span> Poin</div>
+      <div class="score-right" id="badgeRight">🔴 Komputer: <span id="scoreValRight">0</span> Poin</div>
+    </div>
+
+    <!-- Question Container -->
+    <div class="card" id="quizCard">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span class="q-tag" id="qCategory">🌟 Manfaat Gaya Gesek</span>
+        <span style="font-size:12px; font-weight:700; color:#64748b;" id="qCounter">Soal 1 / 10</span>
+      </div>
+      <div class="q-text" id="qText">Memuat pertanyaan...</div>
+      <div class="options-grid" id="optionsBox"></div>
+    </div>
+  </div>
+
+  <!-- Educational Feedback Modal -->
+  <div class="modal-backdrop" id="feedbackModal" style="display:none;">
+    <div class="modal">
+      <h2 id="fbTitle" style="font-size:22px; font-weight:900; margin-bottom:8px;">Hebat! Jawabanmu Benar! 🎉</h2>
+      <p id="fbTag" style="font-size:13px; font-weight:800; color:#0284c7; margin-bottom:12px;">🌟 Manfaat Gaya Gesek</p>
+      <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:16px; padding:12px; font-size:13px; margin-bottom:12px;">
+        <p style="margin-bottom:4px;"><strong>Kunci Jawaban:</strong> <span id="fbCorrectAns">Opsi B</span></p>
+        <p style="color:#475569;" id="fbExplanation">Penjelasan sains...</p>
+      </div>
+      <button class="btn-primary" style="width:100%; font-size:16px; padding:12px;" onclick="nextQuestion()">Lanjut ke Soal Berikutnya ➔</button>
+    </div>
+  </div>
+
+  <script>
+    // Bank Soal Terpadu IPAS Kelas 4 SD
+    const QUESTIONS = [
+      { text: "Apa yang dimaksud dengan gaya dalam sains?", options: ["Tarikan atau dorongan pada suatu benda", "Bentuk dan warna benda", "Kecepatan melaju di jalan", "Berat benda di timbangan"], ans: 0, tag: "Pengertian Gaya", exp: "Gaya adalah tarikan atau dorongan yang dapat menyebabkan benda bergerak, berhenti, berubah arah, atau berubah bentuk." },
+      { text: "Mengapa sol sepatu atau sandal karet dibuat berpola beralur?", options: ["Agar sepatu menjadi licin", "Untuk memperbesar gaya gesek agar tidak terpeleset", "Agar dapat menarik benda besi", "Agar sepatu menjadi ringan"], ans: 1, tag: "Cara Memperbesar Gaya Gesek", exp: "Alur pada sol memperkasar permukaan kontak, memperbesar gaya gesek sehingga kita memiliki cengkeraman kokoh." },
+      { text: "Tindakan apa yang paling tepat untuk mengatasi engsel pintu yang berderit kaku?", options: ["Menaburkan pasir kering", "Mengoleskan minyak pelumas atau oli", "Mengikis dengan amplas kasar", "Menempelkan magnet"], ans: 1, tag: "Cara Memperkecil Gaya Gesek", exp: "Minyak pelumas melapisi logam sehingga memperkecil gaya gesek antarlogam engsel." },
+      { text: "Sistem rem pada sepeda memanfaatkan gaya gesek untuk ...", options: ["Membuat ban menjadi licin", "Memperlambat dan menghentikan putaran roda", "Menambah gaya magnet jalan", "Mempercepat laju kayuhan"], ans: 1, tag: "Manfaat Gaya Gesek", exp: "Gaya gesek antara karet rem dan velg roda sangat bermanfaat untuk menghentikan laju sepeda demi keselamatan." },
+      { text: "Ban kendaraan menjadi aus (botak) setelah lama digunakan merupakan contoh ...", options: ["Kerugian akibat gaya gesek", "Manfaat gaya magnet", "Pengaruh gaya pegas", "Keuntungan gaya gravitasi"], ans: 0, tag: "Kerugian Gaya Gesek", exp: "Gesekan terus-menerus antara ban dan aspal kasar mengikis karet ban hingga aus." },
+      { text: "Pernyataan: 'Gaya gesek selalu merugikan kehidupan manusia.'", options: ["Benar", "Salah"], ans: 1, tag: "Pelurusan Miskonsepsi", exp: "Salah! Gaya gesek sangat bermanfaat untuk berjalan, pengereman kendaraan, dan memegang benda." },
+      { text: "Pemain sepak bola menggunakan sepatu berpul/paku bawah untuk ...", options: ["Memperkecil gesekan dengan tanah", "Memperbesar cengkeraman agar tidak licin di rumput", "Mengurangi berat tubuh", "Memantulkan bola lebih tinggi"], ans: 1, tag: "Cara Memperbesar Gaya Gesek", exp: "Pul sepatu menancap ke tanah rumput untuk memperbesar gaya gesek sehingga pemain tidak mudah terpeleset." },
+      { text: "Memasang roda di bawah lemari pakaian berat bertujuan untuk ...", options: ["Memperkecil gaya gesek saat memindahkan benda", "Memperbesar gaya gesek agar diam", "Menghilangkan massa lemari", "Membuat lemari melayang"], ans: 0, tag: "Cara Memperkecil Gaya Gesek", exp: "Roda mengubah gaya gesek geser menjadi gaya gesek putar yang jauh lebih kecil." },
+      { text: "Karet ketapel dan trampolin memanfaatkan sifat elastisitas dari gaya ...", options: ["Gaya otot", "Gaya pegas", "Gaya magnet", "Gaya gravitasi"], ans: 1, tag: "Gaya Pegas", exp: "Benda lentur (elastis) menghasilkan gaya pegas saat diregangkan atau ditekan." },
+      { text: "Pernyataan: 'Semua jenis logam tanpa terkecuali pasti bisa ditarik magnet.'", options: ["Benar", "Salah"], ans: 1, tag: "Pelurusan Miskonsepsi", exp: "Salah! Magnet hanya menarik logam feromagnetik seperti besi, baja, dan nikel. Emas dan perak tidak ditarik magnet." }
+    ];
+
+    let currentQIdx = 0;
+    let scoreP = 0;
+    let scoreC = 0;
+    let isAnswerLocked = false;
+    let ropeOffset = 0; // px
+    let targetRopeOffset = 0;
+
+    // Web Audio Synthesizer
+    let audioCtx = null;
+    let audioEnabled = true;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    let bgmTimer = null;
+    let bgmStep = 0;
+    // Peaceful, slow pentatonic bell notes (soothing & non-distracting)
+    const bgmNotes = [261.63, 0, 329.63, 0, 392.00, 0, 349.23, 0, 329.63, 0, 293.66, 0, 261.63, 0];
+    
+    function startBGM() {
+      if (!audioEnabled) return;
+      initAudio();
+      if (bgmTimer) return;
+      function tick() {
+        if (!audioEnabled || !audioCtx) return;
+        const t = audioCtx.currentTime;
+        const note = bgmNotes[bgmStep % bgmNotes.length];
+        if (note > 0) {
+          const osc = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(note, t);
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.linearRampToValueAtTime(0.018, t + 0.08);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+          osc.connect(g);
+          g.connect(audioCtx.destination);
+          osc.start(t);
+          osc.stop(t + 1.25);
+        }
+        bgmStep++;
+        bgmTimer = setTimeout(tick, 1000);
+      }
+      tick();
+    }
+
+    function toggleAudio() {
+      audioEnabled = !audioEnabled;
+      if (!audioEnabled && bgmTimer) {
+        clearTimeout(bgmTimer);
+        bgmTimer = null;
+      } else if (audioEnabled) {
+        startBGM();
+      }
+      const soundBtn = document.querySelector('button[onclick="toggleAudio()"]');
+      if (soundBtn) {
+        soundBtn.textContent = audioEnabled ? "🔊 Suara: Nyala" : "🔇 Suara: Mati";
+      }
+    }
+
+    function playBeep(freq, dur) {
+      if (!audioEnabled) return;
+      initAudio();
+      try {
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        g.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        osc.connect(g);
+        g.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + dur);
+      } catch (e) {}
+    }
+
+    // 2D/3D Canvas Rendering (Lush grass, line markings, 3D animated characters, rope)
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = canvas.parentElement.clientHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    let animTime = 0;
+    function renderArena() {
+      animTime += 0.04;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const w = canvas.width;
+      const h = canvas.height;
+      const groundY = h * 0.72;
+
+      // Sky & Horizon
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, groundY);
+      skyGrad.addColorStop(0, '#7dd3fc');
+      skyGrad.addColorStop(1, '#bae6fd');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, w, groundY);
+
+      // Grass Ground
+      ctx.fillStyle = '#4ade80';
+      ctx.fillRect(0, groundY, w, h - groundY);
+
+      // Pitch Chalk Line in Center
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.fillRect(w / 2 - 4, groundY - 4, 8, h - groundY + 4);
+
+      // Smooth rope damping
+      ropeOffset += (targetRopeOffset - ropeOffset) * 0.08;
+
+      // Draw Rope
+      const ropeY = groundY - 24;
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.1, ropeY + Math.sin(animTime * 4) * 2);
+      ctx.lineTo(w * 0.9, ropeY - Math.sin(animTime * 4) * 2);
+      ctx.stroke();
+
+      // Red Center Ribbon
+      const ribbonX = (w / 2) + ropeOffset;
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(ribbonX - 8, ropeY - 14, 16, 28);
+
+      // Left Characters (Player - Blue)
+      drawCartoonTeam(w / 2 - 140 + ropeOffset * 0.7, groundY, '#2563eb', true);
+      // Right Characters (Computer - Red)
+      drawCartoonTeam(w / 2 + 140 + ropeOffset * 0.7, groundY, '#dc2626', false);
+
+      requestAnimationFrame(renderArena);
+    }
+
+    function drawCartoonTeam(baseX, baseY, color, isLeft) {
+      for (let i = 0; i < 3; i++) {
+        const cx = baseX + (isLeft ? -i * 55 : i * 55);
+        const lean = (isLeft ? -0.2 : 0.2) + Math.sin(animTime * 4 + i) * 0.05;
+        
+        ctx.save();
+        ctx.translate(cx, baseY);
+        ctx.rotate(lean);
+
+        // Body
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.roundRect(-14, -60, 28, 40, 8);
+        ctx.fill();
+
+        // Head
+        ctx.fillStyle = '#fde047';
+        ctx.beginPath();
+        ctx.arc(0, -78, 16, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Cap
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(0, -84, 16, Math.PI, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+    }
+
+    renderArena();
+
+    // Load Question
+    function loadQuestion(idx) {
+      isAnswerLocked = false;
+      const q = QUESTIONS[idx];
+      document.getElementById('qCounter').innerText = `Soal ${idx + 1} / ${QUESTIONS.length}`;
+      document.getElementById('qCategory').innerText = q.tag;
+      document.getElementById('qText').innerText = q.text;
+
+      const box = document.getElementById('optionsBox');
+      box.innerHTML = '';
+      q.options.forEach((opt, oIdx) => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-opt';
+        btn.innerHTML = `<span class="opt-letter">${String.fromCharCode(65 + oIdx)}</span><span>${opt}</span>`;
+        btn.onclick = () => selectAnswer(oIdx);
+        box.appendChild(btn);
+      });
+
+      // Computer AI answers after 3.5s
+      setTimeout(() => {
+        if (!isAnswerLocked && Math.random() < 0.65) {
+          scoreC += 1;
+          document.getElementById('scoreValRight').innerText = scoreC;
+          targetRopeOffset = (scoreC - scoreP) * 18;
+        }
+      }, 3500);
+    }
+
+    function selectAnswer(chosenIdx) {
+      if (isAnswerLocked) return;
+      isAnswerLocked = true;
+      const q = QUESTIONS[currentQIdx];
+      const isCorrect = chosenIdx === q.ans;
+
+      const buttons = document.querySelectorAll('.btn-opt');
+      buttons.forEach((btn, idx) => {
+        if (idx === chosenIdx) {
+          btn.className = isCorrect ? 'btn-opt correct' : 'btn-opt wrong';
+        } else if (idx === q.ans) {
+          btn.className = 'btn-opt correct';
+        } else {
+          btn.style.opacity = '0.5';
+        }
+      });
+
+      if (isCorrect) {
+        scoreP += 1;
+        playBeep(600, 0.2);
+      } else {
+        scoreP = Math.max(0, scoreP - 1);
+        playBeep(220, 0.3);
+      }
+
+      document.getElementById('scoreValLeft').innerText = scoreP;
+      targetRopeOffset = (scoreC - scoreP) * 18;
+
+      // Auto advance directly to next question without pressing "lanjut"
+      setTimeout(() => {
+        if (currentQIdx + 1 < QUESTIONS.length) {
+          currentQIdx++;
+          loadQuestion(currentQIdx);
+        } else {
+          alert(`🏆 Pertandingan Selesai!\nSkor Akhir: Murid (${scoreP}) vs Komputer (${scoreC})\nTerus asah pemahaman gaya gesekmu!`);
+          currentQIdx = 0;
+          scoreP = 0;
+          scoreC = 0;
+          targetRopeOffset = 0;
+          loadQuestion(0);
+        }
+      }, 700);
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    loadQuestion(0);
+  </script>
+</body>
+</html>

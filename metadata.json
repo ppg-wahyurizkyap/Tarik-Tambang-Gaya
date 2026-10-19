@@ -1,0 +1,6 @@
+{
+  "name": "Tarik Tambang Gaya - Game Edukasi IPAS Kelas 4 SD",
+  "description": "Game edukasi 3D tarik tambang seru dan interaktif untuk penguatan materi IPAS Kelas 4 SD tentang gaya dan pengaruhnya terhadap benda, khususnya gaya gesek.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
